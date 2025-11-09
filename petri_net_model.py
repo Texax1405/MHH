@@ -11,6 +11,8 @@ class Place:
 class Transition:
     def __init__(self, id):
         self.id = id
+        self.pre_set = set()
+        self.post_set = set()
     
     def __repr__(self):
         return f"Transition(id='{self.id}')"
@@ -32,19 +34,18 @@ class PetriNet:
     
     
     def print_summary(self):
-        print("--- Summary Petri Net ---")
+        print("--- Task 1: Summary Petri Net ---")
         print(f"Total Places: {len(self.places)}")
-        for p in self.places.values():
+        for p in enumerate(list(self.places.values())[:5]):
             print(f"  {p}")
         print(f"\nTotal Transitions: {len(self.transitions)}")
-        for t in self.transitions.values():
+        for t in enumerate(list(self.transitions.values())[:5]):
             print(f"  {t}")
         print(f"\nTotal Arcs: {len(self.arcs)}")
-        for a in self.arcs:
+        for a in enumerate(list(self.arcs)[:5]):
             print(f"  {a}")
-        print("---------------------------")
 
-def parse_petri_net(file):
+def parser_petri_net(file):
     namespace = {'pnml': 'http://www.pnml.org/version-2009/grammar/pnml'}
     tree = ET.parse(file)
     root = tree.getroot()
@@ -63,7 +64,7 @@ def parse_petri_net(file):
             marking_text = text_node.text
 
         if marking_text:
-            marking = int(marking_text)
+            marking = int(marking_text.strip())
 
         net.places[place_id] = Place(place_id, marking)
 
@@ -87,14 +88,13 @@ def parse_petri_net(file):
             continue
     
         net.arcs.append(Arc(arc_id, source_id, target_id))
-    print("Reading file is done!!!")
+
+    for arc in net.arcs:
+        if arc.target in net.transitions and arc.source in net.places:
+            net.transitions[arc.target].pre_set.add(arc.source)
+        elif arc.source in net.transitions and arc.target in net.places:
+            net.transitions[arc.source].post_set.add(arc.target)
+            
     return net
-
-file = "./parser-tool/include/file.xml"
-
-petri_net_data = parse_petri_net(file)
-
-if (petri_net_data):
-    petri_net_data.print_summary()
         
 
