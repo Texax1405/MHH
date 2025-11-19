@@ -30,7 +30,6 @@ def find_reachable_markings(net: PetriNet):
                     visited.add(next_marking_frozen)
                     queue.append(next_marking_frozen)
 
-    print("--- Task 2: BFS is done! ---")
     return visited
 
 
