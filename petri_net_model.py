@@ -1,12 +1,16 @@
 import xml.etree.ElementTree as ET 
 
 class Place:
-    def __init__(self, id, initial_marking=0):
+    def __init__(self, id, initial_marking=0, name=None):
         self.id = id
         self.initial_marking = initial_marking
-    
+        self.name = name or id
+
     def __repr__(self):
-        return f"Place(id='{self.id}', initial_marking={self.initial_marking})"
+        return (
+            f"Place(id='{self.id}', name='{self.name}', "
+            f"initial_marking={self.initial_marking})"
+        )
     
 class Transition:
     def __init__(self, id):
@@ -54,20 +58,29 @@ def parser_petri_net(file):
 
     for place_node in root.findall('.//pnml:place', namespace):
         place_id = place_node.get('id')
-        marking = 0 # set default marking to 0
+        
+        # --- đọc tên place từ <name><text>THINK_1</text> ---
+        place_name = place_id       # default nếu không đọc được
+        name_text_node = place_node.find('pnml:name/pnml:text', namespace)
+        if name_text_node is not None and name_text_node.text:
+            place_name = name_text_node.text.strip()
+
+        # --- read intial marking ---
+        marking = 0
         marking_text = None
-        
+
         marking_node = place_node.find('pnml:initialMarking', namespace)
-        
         if marking_node is not None:
             text_node = marking_node.find('pnml:text', namespace)
-            marking_text = text_node.text
-
+            if text_node is not None and text_node.text:
+                marking_text = text_node.text
+        
         if marking_text:
             marking = int(marking_text.strip())
 
-        net.places[place_id] = Place(place_id, marking)
-
+        # tạo Place với id + name + initial marking 
+        net.places[place_id] = Place(place_id, marking, place_name)
+    
     for trans_node in root.findall('.//pnml:transition', namespace):
         trans_id = trans_node.get('id')
         net.transitions[trans_id] = Transition(trans_id)
