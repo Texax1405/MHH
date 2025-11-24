@@ -7,6 +7,7 @@ from bfs import find_reachable_markings
 from petri_net_model import parser_petri_net
 from bdd import symbolic_reachability
 from deadlock import check_deadlock
+from optimization import optimize_reachable
 
 def get_place_names(net, place_ids):
     names = []
@@ -82,7 +83,7 @@ def main():
         names = get_place_names(net, active_ids)
         print(f"{idx+1}: {names}")
 
-    # --- Task 4 --- 
+    # --- Task 4: Deadlock detection --- 
     print("--- Task 4: Deadlock Detection (ILP + BDD) ---")
 
     t0_dead = time.time()
@@ -96,11 +97,30 @@ def main():
     else:
         print(f"RESULT: DEADLOCK FOUND! (Total deadlocks: {deadlock_count})")
         print(f"Time taken: {t1_dead - t0_dead: .6f} seconds")
-        print(" Deadlock marking:")
+        print("Deadlock marking:")
         deadlock_names = get_place_names(net, deadlock_result)
         print(f"Deadlock sample: {deadlock_names}")
         
-    
+    # --- Task 5: Optimization over reachable markings --- 
+
+    print("--- Task 5: Optimization ---")
+    tracemalloc.start()
+    t0_opt = time.time()
+
+    max_val, best_ids, weights_used = optimize_reachable(net, bdd, reachable_bdd)
+
+    t1_opt = time.time()
+
+    curr_opt, peak_opt = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    print(f"Optimization Result:")
+    print(f"Maximum Objective Value: {max_val}")    
+    print(f"Time taken: {t1_opt - t0_opt:.6f} seconds")
+    print(f"Optimization peak memory: {peak_opt / (1024 * 1024):.4f} MB")
+        
+    best_names = get_place_names(net, best_ids)
+    print(f"Optimal Marking: {best_names}")
 
 
 if __name__ == "__main__":
