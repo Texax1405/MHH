@@ -8,6 +8,12 @@ from petri_net_model import parser_petri_net
 from bdd import symbolic_reachability
 from deadlock import check_deadlock
 
+def get_place_names(net, place_ids):
+    names = []
+    for pid in place_ids:
+        names.append(net.places[pid].name)
+    return sorted(names)
+
 
 def main():
     file = "file.xml"
@@ -19,27 +25,12 @@ def main():
 
     # --- Task 1: Summary of the Petri Net
     print("--- Task 1: Summary Petri Net ---")
-
     # Places
     print(f"Total Places: {len(net.places)}")
-    # for i, place in enumerate(net.places.values()):
-    #     if i >= 5:
-    #         break
-    #     print(f"  ({i}, {place})")
-
     # Transitions
     print(f"Total Transitions: {len(net.transitions)}")
-    # for i, trans in enumerate(net.transitions.values()):
-    #     if i >= 5:
-    #         break
-    #     print(f"  ({i}, {trans})")
-
     # Arcs
     print(f"Total Arcs: {len(net.arcs)}")
-    # for i, arc in enumerate(net.arcs):
-    #     if i >= 5:
-    #         break
-    #     print(f"  ({i}, {arc})")
 
     # --- Task 2: Explicit BFS reachability ---
     tracemalloc.start()
@@ -56,10 +47,11 @@ def main():
     print(f"Explicit BFS time: {t1 - t0:.6f} seconds")
     print(f"Explicit BFS peak memory (approx): {peak_exp / (1024 * 1024):.4f} MB")
 
-    # reachable_list = list(reachable_markings)
-    # for i, marking in enumerate(reachable_list[:5]):
-    #     # each marking is a frozenset of place ids
-    #     print(f" {i}{set(marking)}")
+    reachable_list = list(reachable_markings)
+    for i, marking in enumerate(reachable_list[:5]):
+        # each marking is a frozenset of place ids
+        names = get_place_names(net, marking)
+        print(f"{i+1}: {names}")
 
     # --- Task 3: Symbolic reachability using BDDs ---
     tracemalloc.start()
@@ -78,15 +70,17 @@ def main():
     print(f"total reachable markings (symbolic BDD): {total_bdd}")
     print(f"Symbolic BDD time: {t1 - t0:.6f} seconds")
     print(f"Symbolic BDD peak memory (approx): {peak_sym / (1024 * 1024):.4f} MB")
+    print("Some reachable markings (decoded from BDD):")
 
-    # place_ids = sorted(net.places.keys())
-    # print("Some reachable markings (decoded from BDD):")
-    # max_examples = 5
-    # for idx, model in enumerate(bdd.pick_iter(reachable_bdd)):
-    #     active_places = {pid for pid in place_ids if model.get(pid, False)}
-    #     print(f" {idx}{active_places}")
-    #     if idx + 1 >= max_examples:
-    #         break
+    place_ids = sorted(net.places.keys())
+    max_examples = 5
+    for idx, model in enumerate(bdd.pick_iter(reachable_bdd)):
+        if idx >= max_examples:
+            break
+        
+        active_ids = {pid for pid in place_ids if model.get(pid, 0) == 1}
+        names = get_place_names(net, active_ids)
+        print(f"{idx+1}: {names}")
 
     # --- Task 4 --- 
     print("--- Task 4: Deadlock Detection (ILP + BDD) ---")
@@ -100,11 +94,12 @@ def main():
     if deadlock_result is None:
         print("RESULT: NO DEADLOCK FOUND!")
     else:
-        print("RESULT: DEADLOCK FOUND!")
-        print(f"Total deadlocks: {deadlock_count}")
-        print(" Deadlock marking:")
-        print(f" {deadlock_result}")
+        print(f"RESULT: DEADLOCK FOUND! (Total deadlocks: {deadlock_count})")
         print(f"Time taken: {t1_dead - t0_dead: .6f} seconds")
+        print(" Deadlock marking:")
+        deadlock_names = get_place_names(net, deadlock_result)
+        print(f"Deadlock sample: {deadlock_names}")
+        
     
 
 
