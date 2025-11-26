@@ -3,7 +3,7 @@
 import time
 import tracemalloc
 
-from bfs import find_reachable_markings
+from BFS import find_reachable_markings
 from petri_net_model import parser_petri_net
 from bdd import symbolic_reachability
 from deadlock import check_deadlock
